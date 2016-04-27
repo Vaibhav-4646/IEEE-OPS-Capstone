@@ -1,81 +1,181 @@
-#define PCB_1 16
-#define PCB_2 14
-#define PCB_FRONT 15
+#define PCB_L 16
+#define PCB_R 14
+#define PCB_F 15
 #define IN1 18
 #define IN2 17
 #define IN3 6
 #define IN4 5
-#define PWM1 22
-#define PWM2 3
+#define PWM_L 3
+#define PWM_R 22
 
 int zeroPCB1 = 0;
 int zeroPCB2 = 0;
 int zeroPCBFront = 0;
 
+int leftSpeed;
+int rightSpeed;
+
+int rightDistance;
+int leftDistance;
+
+int rightBaseline;
+int leftBaseline;
+
+// Parameters for the controller
+int rightError;
+int leftError;
+int prevRightError;
+int prevLeftError;
+int totalError;
+int tolerance;
+
+int time;  // Time between control loop iterations
+int integral;
+double kp; // Proportional gain
+double ki; // Integral gain
+
+// Functions to move and decide how to move
+int acquireSensor(int pin);
+void moveStraight();
+void turnRight();
+void turnLeft();
+void stopMoving();
+bool wallsPresent();
+void turn();
+
+int threshold;
 
 void setup() {
-  // put your setup code here, to run once:
   Serial.begin(9600);
-  pinMode(PCB_1, INPUT);
-  pinMode(PCB_2, INPUT);
-  pinMode(PCB_FRONT, INPUT);
+  pinMode(PCB_L, INPUT);
+  pinMode(PCB_R, INPUT);
+  pinMode(PCB_F, INPUT);
   pinMode(IN1, OUTPUT);
   pinMode(IN2, OUTPUT);
   pinMode(IN3, OUTPUT);
   pinMode(IN4, OUTPUT);
-  pinMode(PWM1, OUTPUT);
-  pinMode(PWM2, OUTPUT);
+  pinMode(PWM_L, OUTPUT);
+  pinMode(PWM_R, OUTPUT);
 
   int zeroConstant = 50000;
   
-  for (int i = 0; i < zeroConstant; i++)
-  {
-      zeroPCB1 += analogRead(PCB_1);
-      zeroPCB2 += analogRead(PCB_2);
-      zeroPCBFront += analogRead(PCB_FRONT);
+  for (int i = 0; i < zeroConstant; i++) {
+      zeroPCB1 += analogRead(PCB_L);
+      zeroPCB2 += analogRead(PCB_R);
+      zeroPCBFront += analogRead(PCB_F);
   }
 
   zeroPCB1 /= zeroConstant;
   zeroPCB2 /= zeroConstant;
   zeroPCBFront /= zeroConstant;
 
-  digitalWrite(IN1, HIGH);
-  digitalWrite(IN2, LOW);
-  digitalWrite(PWM1, HIGH);
-  
+  threshold = zeroPCB1;
+  Serial.println(threshold);
+  kp = 1;
+  ki = 1;
+  time = 100;
+
+  //TODO: initialize proportional and integral error  
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-
-  int averageLeft, averageRight, averageFront;
-
-  for (int i = 0; i < 10; i ++)
-  {
-    averageLeft = analogRead(PCB_2);
-    averageRight = analogRead(PCB_1);
-    averageFront = analogRead(PCB_FRONT);
+  while(wallsPresent()) {
+    moveStraight();
   }
-  averageLeft/=10;
-  averageRight/= 10;
-  averageFront /= 10;
-  
-  int leftPCB = analogRead(PCB_2);
-  int rightPCB = analogRead(PCB_1);
-  int frontPCB = analogRead(PCB_FRONT);
-  
-
-  //Pseudocode:
-
-  // if neither left nor right show something, default is to go straight
-  // Maybe we do NOT need to zero it out! -> basically if it reads high, then 
-  // there is a wall, so do NOT turn. And if it reads zero, then turn to that
-  // if ALL three are high, then we are done.
-
-  
-  
- // Serial.println("LeftPCB = " + leftPCB - zeroPCB2);
-  Serial.print("Front is ");
-  Serial.println(frontPCB - zeroPCBFront);
-  delay(100);
+  stopMoving();
+  turn();
+  Serial.println(analogRead(PCB_L));
+  delay(time);
 }
+
+bool wallsPresent() {
+  //Checks if rodent can move forward
+  int right = acquireSensor(PCB_R);
+  int left = acquireSensor(PCB_L);
+  int front = acquireSensor(PCB_F);
+//  int threshold = 500; //TODO: Find the threshold
+return true;
+//  return (right > threshold-100 && left > threshold-100);
+}
+
+void moveStraight() {
+  rightDistance = acquireSensor(PCB_L); //TODO: Should this be analogRead or acquireSensor?
+  leftDistance = acquireSensor(PCB_R);
+
+  rightError = rightBaseline - rightDistance;
+  leftError = leftBaseline - leftDistance;
+  totalError = rightError - leftError;
+
+  if (totalError < -1 * tolerance) {
+    rightSpeed -= abs(kp * totalError);
+    leftSpeed += abs(kp * totalError);
+  } else if (totalError > tolerance) {
+    rightSpeed += abs(kp * totalError);
+    leftSpeed -= abs(kp * totalError);
+  } else {
+    rightSpeed = 255;
+    leftSpeed = 255;
+  }
+
+  if (rightSpeed < 0) {
+    rightSpeed = 0;
+  } else if (rightSpeed > 255) {
+    rightSpeed = 255;
+  }
+
+  if (leftSpeed < 0) {
+    leftSpeed = 0;
+  } else if (leftSpeed > 255) {
+    leftSpeed = 255;
+  }
+
+  digitalWrite(IN1, HIGH); //TODO: MIGHT NEED TO SWITCH THE HIGH/LOW
+  digitalWrite(IN2, LOW); 
+  digitalWrite(IN3, HIGH); //TODO: MIGHT NEED TO SWITCH THE HIGH/LOW
+  digitalWrite(IN4, LOW);
+  analogWrite(PWM_R, rightSpeed);
+  analogWrite(PWM_R, leftSpeed);
+  
+}
+
+void stopMoving() {
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, HIGH);
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, HIGH);
+}
+
+void turn() {
+    //figures out which direction to turn, and then EXECUTES
+    
+}
+
+void turnRight() {
+  const int turnTime = 250;
+  digitalWrite(IN1, HIGH); //TODO: MIGHT NEED TO SWITCH THE HIGH/LOW
+  digitalWrite(IN2, LOW); 
+  digitalWrite(IN3, LOW); //TODO: MIGHT NEED TO SWITCH THE HIGH/LOW
+  digitalWrite(IN4, HIGH);
+  delay(turnTime);
+  moveStraight();
+}
+
+void turnLeft() {
+  const int turnTime = 250;
+  digitalWrite(IN1, LOW); //TODO: MIGHT NEED TO SWITCH THE HIGH/LOW
+  digitalWrite(IN2, HIGH); 
+  digitalWrite(IN3, HIGH); //TODO: MIGHT NEED TO SWITCH THE HIGH/LOW
+  digitalWrite(IN4, LOW);
+  delay(turnTime);
+  moveStraight();
+}
+
+int acquireSensor(int pin) {
+  int sum = 0;
+  int numSamples = 20; //TODO: What is this actually supposed to be?
+  for (int i = 0; i < numSamples; i++) {
+    sum += analogRead(pin);
+  }
+  return sum/numSamples;
+}
+
