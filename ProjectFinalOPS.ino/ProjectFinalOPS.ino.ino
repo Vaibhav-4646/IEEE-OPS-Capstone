@@ -26,9 +26,12 @@ int rightError;
 int leftError;
 int prevRightError;
 int prevLeftError;
+int prevTotalError;
 int totalError;
 int tolerance;
+int sumError;
 
+int prevTime;
 int time;  // Time between control loop iterations
 int integral;
 double kp = 5; // Proportional gain
@@ -43,7 +46,7 @@ void stopMoving();
 bool wallsPresent();
 void turn();
 
-int threshold_R, threshold_L;
+int threshold_R, threshold_L, threshold_F;
 
 void setup() {
   Serial.begin(9600);
@@ -71,14 +74,19 @@ void setup() {
 
   threshold_L = zeroPCB1;
   threshold_R = zeroPCB2;
+  threshold_F = zeroPCBFront;
+  
   Serial.println(threshold_L);
   Serial.println(threshold_R);
+  Serial.println(threshold_F);
+  
   time = 100;
   rightError = 0;
   leftError = 0;
   totalError = 0;
   prevRightError = 0;
   prevLeftError = 0;
+  tolerance = 0;
   //TODO: initialize proportional and integral error  
 }
 
@@ -87,6 +95,8 @@ void loop() {
   Serial.println(acquireSensor(PCB_R));
   Serial.print("Left: ");
   Serial.println(acquireSensor(PCB_L)); 
+  Serial.print("Front: ");
+  Serial.println(acquireSensor(PCB_F));
   while(wallsPresent()) {
     moveStraight();
   }
@@ -99,9 +109,9 @@ bool wallsPresent() {
   int right = acquireSensor(PCB_R);
   int left = acquireSensor(PCB_L);
   int front = acquireSensor(PCB_F);
-  if (left < threshold_L-100)
+  if (left < threshold_L-50)
     return false;
-  if (right < threshold_R-100)
+  if (right < threshold_R-50)
     return false;
   return true;
 }
@@ -113,9 +123,18 @@ void moveStraight() {
   rightError = rightBaseline - rightDistance;
   leftError = leftBaseline - leftDistance;
   totalError = rightError - leftError;
-
-  if (totalError < -1 * tolerance) {
-    rightSpeed -= abs(kp * totalError);
+  
+  /* how long since the last calculated */
+  unsigned long now = millis();       // current time
+  double timeChange = (double)(now - prevTime);
+  /* 
+   *  computing working error values
+   */
+  sumError += (totalError * timeChange);
+  double derivError = (totalError - prevTotalError)/timeChange;
+    
+  if (totalError < -1 * tolerance) {          // TODO: we need to change this part to now use I and D. Why is it looking at tolerance??
+    rightSpeed -= abs(kp * totalError); 
     leftSpeed += abs(kp * totalError);
   } else if (totalError > tolerance) {
     rightSpeed += abs(kp * totalError);
@@ -124,7 +143,7 @@ void moveStraight() {
     rightSpeed = 255;
     leftSpeed = 255;
   }
-
+ 
   if (rightSpeed < 0) {
     rightSpeed = 0;
   } else if (rightSpeed > 255) {
@@ -144,7 +163,11 @@ void moveStraight() {
 
   analogWrite(PWM_R, rightSpeed);
   analogWrite(PWM_L, leftSpeed);
-  
+
+  prevLeftError = leftError;        // changing up the variables for the next iteration of the loop
+  prevRightError = rightError;
+  prevTotalError = totalError;
+  prevTime = now;
 }
 
 void stopMoving() {
@@ -158,9 +181,9 @@ void turn() {
     //figures out which direction to turn, and then EXECUTES
     int right = acquireSensor(PCB_R);
     int left = acquireSensor(PCB_L);
-    if (right < threshold_R-100) {
+    if (right < threshold_R-50) {
       turnRight();
-    } else if (left < threshold_L-100) {
+    } else if (left < threshold_L-50) {
       turnLeft();
     }
 }
@@ -171,7 +194,7 @@ void turnLeft() {
   digitalWrite(IN2, LOW); 
   digitalWrite(IN3, LOW);
   digitalWrite(IN4, HIGH);
-  analogWrite(PWM_R, 200);
+  analogWrite(PWM_R, 200);      // we have to figure out what PWM to do these at
   analogWrite(PWM_L, 200);
   delay(turnTime);
   digitalWrite(IN1, LOW);
