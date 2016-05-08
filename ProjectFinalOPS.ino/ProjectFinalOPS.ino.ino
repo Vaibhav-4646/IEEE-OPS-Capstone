@@ -109,6 +109,8 @@ bool wallsPresent() {
   int right = acquireSensor(PCB_R);
   int left = acquireSensor(PCB_L);
   int front = acquireSensor(PCB_F);
+  if (front > 1023-100)
+    return true;
   if (left < threshold_L-50)
     return false;
   if (right < threshold_R-50)
