@@ -12,6 +12,8 @@ int zeroPCB1 = 0;
 int zeroPCB2 = 0;
 int zeroPCBFront = 0;
 
+int right, left, front;
+
 int leftSpeed;
 int rightSpeed;
 
@@ -78,7 +80,7 @@ void setup() {
   Serial.println(threshold_R);
   Serial.println(threshold_F);
   
-  time = 100;
+  loopTime = 100;
   rightError = 0;
   leftError = 0;
   totalError = 0;
@@ -98,20 +100,20 @@ void loop() {
   while(wallsPresent()) {
     moveStraight();
   }
-  stopMoving();
+  //stopMoving();                         // we no longer want it to stop moving, but turn as it moves
   turn();
-  delay(time);
+  delay(loopTime);
 }
 
 bool wallsPresent() {
-  int right = acquireSensor(PCB_R);
-  int left = acquireSensor(PCB_L);
-  int front = acquireSensor(PCB_F);
+  right = acquireSensor(PCB_R);
+  left = acquireSensor(PCB_L);
+  front = acquireSensor(PCB_F);
   if (front > 1023-500)
     return false;
-  if (left < threshold_L-50)
+  if (left < threshold_L-100)
     return false;
-  if (right < threshold_R-50)
+  if (right < threshold_R-100)
     return false;
   return true;
 }
@@ -183,27 +185,41 @@ void stopMoving() {
 
 void turn() {
     //figures out which direction to turn, and then EXECUTES
-    int right = acquireSensor(PCB_R);
-    int left = acquireSensor(PCB_L);
-    if (right < threshold_R-50) {
+    //right = acquireSensor(PCB_R);
+   // left = acquireSensor(PCB_L);    // these are global variables now
+    
+    if (right < threshold_R-100) {
       turnRight();
-    } else if (left < threshold_L-50) {
+    } else if (left < threshold_L-100) {
       turnLeft();
     }
 }
 
 void turnLeft() {
-  const int turnTime = 250;     // cant do based on turn time anymore
-  digitalWrite(IN1, HIGH);
-  digitalWrite(IN2, LOW); 
+  //const int turnTime = 250;     // cant do based on turn time anymore
+
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, HIGH);         // we need both to be forward, but the right being faster than the left
   digitalWrite(IN3, LOW);
   digitalWrite(IN4, HIGH);
-  analogWrite(PWM_R, 200);      // we have to figure out what PWM to do these at
-  analogWrite(PWM_L, 200);
-  delay(turnTime);
+  int currleft;
+  
+  for (int i = 0; i < leftspeed; i++)
+  {
+    analogWrite(PWM_R, rightspeed);
+    analogWrite(PWM_L, leftspeed - i);
+    delay(10);
+    currleft = acquireSensor(PCB_R);
+    if (currleft == right)
+      break;                    // this means its made a good turn and the right reads the same value as before and after the turn
+  }
+  
+  //analogWrite(PWM_R, 200);      // we have to figure out what PWM to do these at
+  //analogWrite(PWM_L, 200);
+  delay(30);
   digitalWrite(IN1, LOW);
   digitalWrite(IN2, LOW); 
-  digitalWrite(IN3, LOW);
+  digitalWrite(IN3, LOW);           // this is to coast forward a bit after turning
   digitalWrite(IN4, LOW);
   analogWrite(PWM_R, 255);
   analogWrite(PWM_L, 255);
