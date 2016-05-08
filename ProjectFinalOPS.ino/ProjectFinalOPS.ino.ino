@@ -18,9 +18,6 @@ int rightSpeed;
 int rightDistance;
 int leftDistance;
 
-int rightBaseline;
-int leftBaseline;
-
 // Parameters for the controller
 int rightError;
 int leftError;
@@ -86,8 +83,8 @@ void setup() {
   totalError = 0;
   prevRightError = 0;
   prevLeftError = 0;
-  tolerance = 0;
-  //TODO: initialize proportional and integral error  
+  tolerance = 20;
+  //TODO: initialize proportional and integral error  (We don't need to do this)
 }
 
 void loop() {
@@ -120,25 +117,29 @@ void moveStraight() {
   rightDistance = acquireSensor(PCB_R);
   leftDistance = acquireSensor(PCB_L);
 
-  rightError = rightBaseline - rightDistance;
-  leftError = leftBaseline - leftDistance;
+  rightError = threshold_R - rightDistance;
+  leftError = threshold_L - leftDistance;
   totalError = rightError - leftError;
   
   /* how long since the last calculated */
   unsigned long now = millis();       // current time
   double timeChange = (double)(now - prevTime);
+  
   /* 
    *  computing working error values
    */
   sumError += (totalError * timeChange);
   double derivError = (totalError - prevTotalError)/timeChange;
-    
-  if (totalError < -1 * tolerance) {          // TODO: we need to change this part to now use I and D. Why is it looking at tolerance??
-    rightSpeed -= abs(kp * totalError); 
-    leftSpeed += abs(kp * totalError);
-  } else if (totalError > tolerance) {
-    rightSpeed += abs(kp * totalError);
-    leftSpeed -= abs(kp * totalError);
+
+  double PIDerror = totalError + sumError + derivError;
+  double PIDerrorSum = kp * totalError + ki * sumError + kd * derivError;
+      
+  if (PIDerror < -1 * tolerance) {          // TODO: we need to change this part to now use I and D.
+    rightSpeed -= abs(PIDerrorSum); 
+    leftSpeed += abs(PIDerrorSum);
+  } else if (PIDerror > tolerance) {      // if total error is negative, left error > right, which means its getting closer to the left wall
+    rightSpeed += abs(PIDerrorSum);
+    leftSpeed -= abs(PIDerrorSum);
   } else {
     rightSpeed = 255;
     leftSpeed = 255;
@@ -156,7 +157,7 @@ void moveStraight() {
     leftSpeed = 255;
   }
 
-  digitalWrite(IN1, LOW); //THIS MOVES FORWARD CORRECTLY. THE HIGH AND LOWS ARE CORRECT
+  digitalWrite(IN1, LOW);           //THIS MOVES FORWARD CORRECTLY. THE HIGH AND LOWS ARE CORRECT
   digitalWrite(IN2, HIGH); 
   digitalWrite(IN3, LOW);
   digitalWrite(IN4, HIGH);
