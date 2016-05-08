@@ -29,10 +29,11 @@ int tolerance;
 int sumError;
 
 int prevTime;
-int time;  // Time between control loop iterations
+int loopTime;  // Time between control loop iterations
 int integral;
 double kp = 5; // Proportional gain
-double ki = 1; // Integral gain
+double ki = 0.2; // Integral gain
+double kd = 0.5;
 
 // Functions to move and decide how to move
 int acquireSensor(int pin);
@@ -106,8 +107,8 @@ bool wallsPresent() {
   int right = acquireSensor(PCB_R);
   int left = acquireSensor(PCB_L);
   int front = acquireSensor(PCB_F);
-  if (front > 1023-100)
-    return true;
+  if (front > 1023-500)
+    return false;
   if (left < threshold_L-50)
     return false;
   if (right < threshold_R-50)
@@ -204,8 +205,8 @@ void turnLeft() {
   digitalWrite(IN2, LOW); 
   digitalWrite(IN3, LOW);
   digitalWrite(IN4, LOW);
-  analogWrite(PWM_R, 0);
-  analogWrite(PWM_L, 0);
+  analogWrite(PWM_R, 255);
+  analogWrite(PWM_L, 255);
 }
 
 void turnRight() {
