@@ -33,9 +33,9 @@ int sumError;
 int prevTime;
 int loopTime;  // Time between control loop iterations
 int integral;
-double kp = 5; // Proportional gain
-double ki = 1.2; // Integral gain
-double kd = 2.5;
+double kp = 10; // Proportional gain
+double ki = 0; // Integral gain
+double kd = 0;
 
 // Functions to move and decide how to move
 int acquireSensor(int pin);
@@ -86,7 +86,7 @@ void setup() {
   totalError = 0;
   prevRightError = 0;
   prevLeftError = 0;
-  tolerance = 20;
+  tolerance = 10;
   //TODO: initialize proportional and integral error  (We don't need to do this)
 }
 
@@ -129,8 +129,8 @@ void moveStraight() {
   totalError = rightError - leftError;
   
   /* how long since the last calculated */
-  unsigned long now = millis();       // current time
-  double timeChange = (double)(now - prevTime);
+  unsigned long nowT = millis();       // current time
+  double timeChange = (double)(nowT - prevTime);
   
   /* 
    *  computing working error values
@@ -175,7 +175,7 @@ void moveStraight() {
   prevLeftError = leftError;        // changing up the variables for the next iteration of the loop
   prevRightError = rightError;
   prevTotalError = totalError;
-  prevTime = now;
+  prevTime = nowT;
 }
 
 void stopMoving() {
@@ -205,7 +205,7 @@ void turnLeft() {
   digitalWrite(IN4, HIGH);
   analogWrite(PWM_R, 100);
   analogWrite(PWM_L, 100);
-  delay(100);
+  delay(300);
   
   digitalWrite(IN1, HIGH); //Brake
   digitalWrite(IN2, HIGH); 
@@ -216,9 +216,9 @@ void turnLeft() {
   digitalWrite(IN2, LOW); 
   digitalWrite(IN3, LOW);
   digitalWrite(IN4, HIGH);
-  analogWrite(PWM_R, 100);
-  analogWrite(PWM_L, 100);
-  delay(200); //TODO: Find what value this should be
+  analogWrite(PWM_R, 200);
+  analogWrite(PWM_L, 200);
+  delay(300); //TODO: Find what value this should be
   
   digitalWrite(IN1, HIGH); //Brake
   digitalWrite(IN2, HIGH); 
@@ -231,7 +231,7 @@ void turnLeft() {
   digitalWrite(IN4, HIGH);
   analogWrite(PWM_R, 100);
   analogWrite(PWM_L, 100);
-  delay(100);
+  delay(300);
 
   digitalWrite(IN1, HIGH); //Brake
   digitalWrite(IN2, HIGH); 
@@ -250,9 +250,9 @@ void turnRight() {
   digitalWrite(IN2, HIGH); 
   digitalWrite(IN3, LOW);
   digitalWrite(IN4, HIGH);
-  analogWrite(PWM_R, 100);
-  analogWrite(PWM_L, 100);
-  delay(100);
+  analogWrite(PWM_R, 150);
+  analogWrite(PWM_L, 150);
+  delay(300);
   
   digitalWrite(IN1, HIGH); //Brake
   digitalWrite(IN2, HIGH); 
@@ -263,9 +263,9 @@ void turnRight() {
   digitalWrite(IN2, HIGH); 
   digitalWrite(IN3, HIGH);
   digitalWrite(IN4, LOW);
-  analogWrite(PWM_R, 100);
-  analogWrite(PWM_L, 100);
-  delay(200); //TODO: Find what value this should be
+  analogWrite(PWM_R, 200);
+  analogWrite(PWM_L, 200);
+  delay(300); //TODO: Find what value this should be
   
   digitalWrite(IN1, HIGH); //Brake
   digitalWrite(IN2, HIGH); 
@@ -278,7 +278,7 @@ void turnRight() {
   digitalWrite(IN4, HIGH);
   analogWrite(PWM_R, 100);
   analogWrite(PWM_L, 100);
-  delay(100);
+  delay(300);
 
   digitalWrite(IN1, HIGH); //Brake
   digitalWrite(IN2, HIGH); 
