@@ -34,8 +34,8 @@ int prevTime;
 int loopTime;  // Time between control loop iterations
 int integral;
 double kp = 5; // Proportional gain
-double ki = 0.2; // Integral gain
-double kd = 0.5;
+double ki = 1.2; // Integral gain
+double kd = 2.5;
 
 // Functions to move and decide how to move
 int acquireSensor(int pin);
@@ -106,19 +106,21 @@ void loop() {
 }
 
 bool wallsPresent() {
+  Serial.println("In wallsPresent");
   right = acquireSensor(PCB_R);
   left = acquireSensor(PCB_L);
   front = acquireSensor(PCB_F);
-  if (front > 1023-500)
+//  if (front > 1023-500)
+//    return false;
+  if (left < threshold_L-200)
     return false;
-  if (left < threshold_L-100)
-    return false;
-  if (right < threshold_R-100)
+  if (right < threshold_R-200)
     return false;
   return true;
 }
 
 void moveStraight() {
+  Serial.println("In moveStraight");
   rightDistance = acquireSensor(PCB_R);
   leftDistance = acquireSensor(PCB_L);
 
@@ -187,7 +189,7 @@ void turn() {
     //figures out which direction to turn, and then EXECUTES
     //right = acquireSensor(PCB_R);
    // left = acquireSensor(PCB_L);    // these are global variables now
-    
+    Serial.println("In turn");
     if (right < threshold_R-100) {
       turnRight();
     } else if (left < threshold_L-100) {
@@ -196,47 +198,92 @@ void turn() {
 }
 
 void turnLeft() {
-  digitalWrite(IN1, LOW);
-  digitalWrite(IN2, HIGH);         // we need both to be forward, but the right being faster than the left
-  digitalWrite(IN3, LOW);
-  digitalWrite(IN4, HIGH);
-  int currRight;
-  currRight = acquireSensor(PCB_R);
-  do
-  {
-      analogWrite(PWM_L, 20);
-      analogWrite(PWM_R, 100);
-      delay(10);
-      currRight = acquireSensor(PCB_R);
-  }while(currRight >= right + 50 || currRight <= right - 50);         // TODO: CHANGE THESE CONSTANTS LATER
-  
-  digitalWrite(IN1, LOW);
-  digitalWrite(IN2, LOW); 
-  digitalWrite(IN3, LOW);           // this is to coast forward a bit after turning
-  digitalWrite(IN4, LOW);
-  analogWrite(PWM_R, 255);
-  analogWrite(PWM_L, 255);          // TODO: change these later
-}
-
-void turnRight() {
-  digitalWrite(IN1, LOW);
+  Serial.println("In turnLeft");
+  digitalWrite(IN1, LOW); //Moves forward for some time
   digitalWrite(IN2, HIGH); 
   digitalWrite(IN3, LOW);
   digitalWrite(IN4, HIGH);
-  int currLeft;
-  currLeft = acquireSensor(PCB_L);
-  do
-  {
-      analogWrite(PWM_R, 20);
-      analogWrite(PWM_L, 100);
-      delay(10);
-      currLeft = acquireSensor(PCB_L);
-  }while(currLeft >= left + 50 || currLeft <= left - 50);         // TODO: CHANGE THESE CONSTANTS LATER
+  analogWrite(PWM_R, 100);
+  analogWrite(PWM_L, 100);
+  delay(100);
   
-  digitalWrite(IN1, LOW);
+  digitalWrite(IN1, HIGH); //Brake
+  digitalWrite(IN2, HIGH); 
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, HIGH);
+
+  digitalWrite(IN1, HIGH);
   digitalWrite(IN2, LOW); 
   digitalWrite(IN3, LOW);
+  digitalWrite(IN4, HIGH);
+  analogWrite(PWM_R, 100);
+  analogWrite(PWM_L, 100);
+  delay(200); //TODO: Find what value this should be
+  
+  digitalWrite(IN1, HIGH); //Brake
+  digitalWrite(IN2, HIGH); 
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, HIGH);  
+
+  digitalWrite(IN1, LOW); //Moves forward for some time
+  digitalWrite(IN2, HIGH); 
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, HIGH);
+  analogWrite(PWM_R, 100);
+  analogWrite(PWM_L, 100);
+  delay(100);
+
+  digitalWrite(IN1, HIGH); //Brake
+  digitalWrite(IN2, HIGH); 
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, HIGH);  
+  analogWrite(PWM_R, 0);
+  analogWrite(PWM_L, 0);
+}
+
+void turnRight() {
+  //Go forward a bit based on time
+  //Turn right based on time
+  //Go forward a bit based on time
+  Serial.println("In turnRight");
+  digitalWrite(IN1, LOW); //Moves forward for some time
+  digitalWrite(IN2, HIGH); 
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, HIGH);
+  analogWrite(PWM_R, 100);
+  analogWrite(PWM_L, 100);
+  delay(100);
+  
+  digitalWrite(IN1, HIGH); //Brake
+  digitalWrite(IN2, HIGH); 
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, HIGH);
+
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, HIGH); 
+  digitalWrite(IN3, HIGH);
   digitalWrite(IN4, LOW);
+  analogWrite(PWM_R, 100);
+  analogWrite(PWM_L, 100);
+  delay(200); //TODO: Find what value this should be
+  
+  digitalWrite(IN1, HIGH); //Brake
+  digitalWrite(IN2, HIGH); 
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, HIGH);  
+
+  digitalWrite(IN1, LOW); //Moves forward for some time
+  digitalWrite(IN2, HIGH); 
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, HIGH);
+  analogWrite(PWM_R, 100);
+  analogWrite(PWM_L, 100);
+  delay(100);
+
+  digitalWrite(IN1, HIGH); //Brake
+  digitalWrite(IN2, HIGH); 
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, HIGH);  
   analogWrite(PWM_R, 0);
   analogWrite(PWM_L, 0);
 }
