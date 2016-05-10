@@ -196,44 +196,43 @@ void turn() {
 }
 
 void turnLeft() {
-  //const int turnTime = 250;     // cant do based on turn time anymore
-
   digitalWrite(IN1, LOW);
   digitalWrite(IN2, HIGH);         // we need both to be forward, but the right being faster than the left
   digitalWrite(IN3, LOW);
   digitalWrite(IN4, HIGH);
-  int currleft;
-  
-  for (int i = 0; i < leftspeed; i++)
+  int currRight;
+  currRight = acquireSensor(PCB_R);
+  do
   {
-    analogWrite(PWM_R, rightspeed);
-    analogWrite(PWM_L, leftspeed - i);
-    delay(10);
-    currleft = acquireSensor(PCB_R);
-    if (currleft == right)
-      break;                    // this means its made a good turn and the right reads the same value as before and after the turn
-  }
+      analogWrite(PWM_L, 20);
+      analogWrite(PWM_R, 100);
+      delay(10);
+      currRight = acquireSensor(PCB_R);
+  }while(currRight >= right + 50 || currRight <= right - 50);         // TODO: CHANGE THESE CONSTANTS LATER
   
-  //analogWrite(PWM_R, 200);      // we have to figure out what PWM to do these at
-  //analogWrite(PWM_L, 200);
-  delay(30);
   digitalWrite(IN1, LOW);
   digitalWrite(IN2, LOW); 
   digitalWrite(IN3, LOW);           // this is to coast forward a bit after turning
   digitalWrite(IN4, LOW);
   analogWrite(PWM_R, 255);
-  analogWrite(PWM_L, 255);
+  analogWrite(PWM_L, 255);          // TODO: change these later
 }
 
 void turnRight() {
-  const int turnTime = 250;
   digitalWrite(IN1, LOW);
   digitalWrite(IN2, HIGH); 
-  digitalWrite(IN3, HIGH);
-  digitalWrite(IN4, LOW);
-  analogWrite(PWM_R, 200);
-  analogWrite(PWM_L, 200);
-  delay(turnTime);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, HIGH);
+  int currLeft;
+  currLeft = acquireSensor(PCB_L);
+  do
+  {
+      analogWrite(PWM_R, 20);
+      analogWrite(PWM_L, 100);
+      delay(10);
+      currLeft = acquireSensor(PCB_L);
+  }while(currLeft >= left + 50 || currLeft <= left - 50);         // TODO: CHANGE THESE CONSTANTS LATER
+  
   digitalWrite(IN1, LOW);
   digitalWrite(IN2, LOW); 
   digitalWrite(IN3, LOW);
