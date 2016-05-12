@@ -8,6 +8,10 @@
 #define PWM_L 22
 #define PWM_R 3
 
+double kp = 4; // Proportional gain
+double ki = 1.3; // Integral gain
+double kd = 0;
+
 int zeroPCB1 = 0;
 int zeroPCB2 = 0;
 int zeroPCBFront = 0;
@@ -31,11 +35,8 @@ int tolerance;
 int sumError;
 
 int prevTime;
-int loopTime;  // Time between control loop iterations
 int integral;
-double kp = 5; // Proportional gain
-double ki = 0; // Integral gain
-double kd = 0;
+
 
 // Functions to move and decide how to move
 int acquireSensor(int pin);
@@ -80,42 +81,38 @@ void setup() {
   Serial.println(threshold_R);
   Serial.println(threshold_F);
   
-  loopTime = 20;
   rightError = 0;
   leftError = 0;
   totalError = 0;
   prevRightError = 0;
   prevLeftError = 0;
-  tolerance = 40;
+  tolerance = 20;
   //TODO: initialize proportional and integral error  (We don't need to do this)
 }
 
 void loop() {
-  Serial.print("Right: ");
-  Serial.println(acquireSensor(PCB_R));
-  Serial.print("Left: ");
-  Serial.println(acquireSensor(PCB_L)); 
-  Serial.print("Front: ");
-  Serial.println(acquireSensor(PCB_F));
   while(wallsPresent()) {
-    moveStraight();
+      moveStraight();
+      Serial.print("Right: ");
+      Serial.println(acquireSensor(PCB_R));
+      Serial.print("Left: ");
+      Serial.println(acquireSensor(PCB_L)); 
+      Serial.print("Front: ");
+      Serial.println(acquireSensor(PCB_F));
   }
   turn();
-  delay(loopTime);
 }
 
 bool wallsPresent() {
-  Serial.println("In wallsPresent");
+  //Serial.println("In wallsPresent");
   right = acquireSensor(PCB_R);
   left = acquireSensor(PCB_L);
   front = acquireSensor(PCB_F);
-  Serial.print("Right: ");
-  Serial.println(right);
 //  if (front > 1023-500)
 //    return false;
-  if (left < threshold_L-350)
+  if (left < threshold_L/2)
     return false;
-  if (right < threshold_R- 300 )
+  if (right < threshold_R/2)
     return false;
   return true;
 }
@@ -124,7 +121,9 @@ void moveStraight() {
   //Serial.println("In moveStraight");
   rightDistance = right;
   leftDistance = left;
-
+  int defSpeed = 150;
+  rightSpeed = defSpeed;
+  leftSpeed = defSpeed;
   rightError = threshold_R - rightDistance;
   Serial.print("Right Error is : ");
   Serial.println(rightError);
@@ -142,14 +141,12 @@ void moveStraight() {
    */
   sumError += (totalError * timeChange);
   double derivError = (totalError - prevTotalError)/timeChange;
-
-  double PIDerror = totalError + sumError + derivError;
-  double PIDerrorSum = kp * totalError + ki * sumError + kd * derivError;
+  double PIDerrorSum = kp * totalError + ki * sumError;// + kd * derivError;
       
-  if (PIDerror < -1 * tolerance) {          // TODO: we need to change this part to now use I and D.
+  if (totalError < -1 * tolerance) {          // TODO: we need to change this part to now use I and D.
     rightSpeed -= abs(PIDerrorSum); 
     leftSpeed += abs(PIDerrorSum);
-  } else if (PIDerror > tolerance) {      // if total error is negative, left error > right, which means its getting closer to the left wall
+  } else if (totalError > tolerance) {      // if total error is negative, left error > right, which means its getting closer to the left wall
     rightSpeed += abs(PIDerrorSum);
     leftSpeed -= abs(PIDerrorSum);
   } else {
@@ -212,42 +209,41 @@ void turnLeft() {
   digitalWrite(IN2, HIGH); 
   digitalWrite(IN3, LOW);
   digitalWrite(IN4, HIGH);
-  analogWrite(PWM_R, 100);
-  analogWrite(PWM_L, 100);
-  delay(300);
+  analogWrite(PWM_R, 255);
+  analogWrite(PWM_L, 255);
+//  while (acquireSensor(PCB_F) < threshold_F*2)
+//  {  
+//      Serial.println(acquireSensor(PCB_F));
+//      Serial.println("moving straight");
+//  }
+  delay(1000);
   
   digitalWrite(IN1, HIGH); //Brake
   digitalWrite(IN2, HIGH); 
   digitalWrite(IN3, HIGH);
   digitalWrite(IN4, HIGH);
 
-  digitalWrite(IN1, HIGH);
-  digitalWrite(IN2, LOW); 
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, HIGH); 
   digitalWrite(IN3, LOW);
   digitalWrite(IN4, HIGH);
-  analogWrite(PWM_R, 200);
-  analogWrite(PWM_L, 200);
-  delay(300); //TODO: Find what value this should be
+  analogWrite(PWM_R, 255);
+  analogWrite(PWM_L, 0);
+  delay(1200); //TODO: Find what value this should be
   
   digitalWrite(IN1, HIGH); //Brake
   digitalWrite(IN2, HIGH); 
   digitalWrite(IN3, HIGH);
   digitalWrite(IN4, HIGH);  
-
+  delay(500);
+  
   digitalWrite(IN1, LOW); //Moves forward for some time
   digitalWrite(IN2, HIGH); 
   digitalWrite(IN3, LOW);
   digitalWrite(IN4, HIGH);
-  analogWrite(PWM_R, 100);
-  analogWrite(PWM_L, 100);
-  delay(300);
-
-  digitalWrite(IN1, HIGH); //Brake
-  digitalWrite(IN2, HIGH); 
-  digitalWrite(IN3, HIGH);
-  digitalWrite(IN4, HIGH);  
-  analogWrite(PWM_R, 0);
-  analogWrite(PWM_L, 0);
+  analogWrite(PWM_R, 30);
+  analogWrite(PWM_L, 30);
+  delay(1000);
 }
 
 void turnRight() {
@@ -259,13 +255,14 @@ void turnRight() {
   digitalWrite(IN2, HIGH); 
   digitalWrite(IN3, LOW);
   digitalWrite(IN4, HIGH);
-  analogWrite(PWM_R, 150);
-  analogWrite(PWM_L, 150);
-  while (acquireSensor(PCB_F) < 700)
-  {  
-      Serial.println(acquireSensor(PCB_F));
-      Serial.println("moving straight");
-  }
+  analogWrite(PWM_R, 255);
+  analogWrite(PWM_L, 255);
+//  while (acquireSensor(PCB_F) < threshold_F*2)
+//  {  
+//      Serial.println(acquireSensor(PCB_F));
+//      Serial.println("moving straight");
+//  }
+  delay(1200);
   
   digitalWrite(IN1, HIGH); //Brake
   digitalWrite(IN2, HIGH); 
@@ -274,11 +271,11 @@ void turnRight() {
 
   digitalWrite(IN1, LOW);
   digitalWrite(IN2, HIGH); 
-  digitalWrite(IN3, HIGH);
-  digitalWrite(IN4, LOW);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, HIGH);
   analogWrite(PWM_R, 0);
   analogWrite(PWM_L, 255);
-  delay(1200); //TODO: Find what value this should be
+  delay(1500); //TODO: Find what value this should be
   
   digitalWrite(IN1, HIGH); //Brake
   digitalWrite(IN2, HIGH); 
@@ -293,11 +290,6 @@ void turnRight() {
   analogWrite(PWM_R, 100);
   analogWrite(PWM_L, 100);
   delay(300);
-//
-//  digitalWrite(IN1, LOW); //COAST
-//  digitalWrite(IN2, LOW); 
-//  digitalWrite(IN3, LOW);
-//  digitalWrite(IN4, LOW);  
 }
 
 int acquireSensor(int pin) {
