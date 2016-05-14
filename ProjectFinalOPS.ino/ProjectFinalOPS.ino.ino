@@ -190,8 +190,22 @@ void moveStraight() {
     Serial.print("The sum of the errors up till loop 100 is: ");        // if the error is larger and larger, then 
                                                                         // that means its straying off the center more and more
     Serial.println(sumError);
+    earlyStop();
   }
   
+}
+
+void earlyStop()
+{
+  digitalWrite(IN1, HIGH); //Brake
+  digitalWrite(IN2, HIGH); 
+  digitalWrite(IN3, HIGH);
+  digitalWrite(IN4, HIGH);
+
+  while (true)
+  {
+     Serial.println(" ");
+  }
 }
 
 void stopMoving() {
