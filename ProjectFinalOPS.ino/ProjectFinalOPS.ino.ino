@@ -8,9 +8,9 @@
 #define PWM_L 22
 #define PWM_R 3
 
-double kp = 1.45;      // Proportional gain
-double ki = 0.5;        // Integral gain 
-double kd = 0.00;       // Derivative gain
+double kp = .2;      // Proportional gain
+double ki = 0;        // Integral gain 
+double kd = 0;       // Derivative gain
 
 int zeroPCB1 = 0;
 int zeroPCB2 = 0;
@@ -87,7 +87,6 @@ void setup() {
   prevRightError = 0;
   prevLeftError = 0;
   tolerance = 20;
-  //TODO: initialize proportional and integral error  (We don't need to do this)
   prevTime = millis();
 }
 
@@ -106,21 +105,23 @@ void loop() {
 
 bool wallsPresent() {
   //Serial.println("In wallsPresent");
-  right = acquireSensor(PCB_R);
-  left = acquireSensor(PCB_L);
+//  right = acquireSensor(PCB_R);
+//  left = acquireSensor(PCB_L);
   front = acquireSensor(PCB_F);
-//  if (front > 1023-500)
+  if (front > threshold_F*2 || front > 850)
+    return false;
+//  if (left < threshold_L/5)
 //    return false;
-  if (left < threshold_L - 300)
-    return false;
-  if (right < threshold_R - 200)
-    return false;
+//  if (right < threshold_R/5)
+//    return false;
   return true;
 }
 
 void moveStraight() {
   //Serial.println("In moveStraight");
   loopCounter++;
+  Serial.print("Loop counter is: ");
+  Serial.println(loopCounter);
   rightDistance = right;
   leftDistance = left;
   int defSpeed = 100;
@@ -137,23 +138,24 @@ void moveStraight() {
   /* how long since the last calculated */
   double nowT = millis();       // current time
   double timeChange = (double)(nowT - prevTime);
-  
+  Serial.print("Time change is: ");
+  Serial.println(timeChange);
   /* 
    *  computing working error values
    */
-  sumError += (totalError * timeChange);
-  double derivError = (totalError - prevTotalError)/timeChange;
+  sumError += (totalError * timeChange/1000);
+  double derivError = (totalError - prevTotalError);///timeChange;
   double PIDerrorSum = kp * totalError + ki * sumError + kd * derivError;
       
   if (totalError < -1 * tolerance) {          // TODO: we need to change this part to now use I and D.
-    rightSpeed -= abs(PIDerrorSum); 
-    leftSpeed += abs(PIDerrorSum);
-  } else if (totalError > tolerance) {      // if total error is negative, left error > right, which means its getting closer to the left wall
+    leftSpeed -= abs(PIDerrorSum); 
     rightSpeed += abs(PIDerrorSum);
-    leftSpeed -= abs(PIDerrorSum);
+  } else if (totalError > tolerance) {      // if total error is negative, left error > right, which means its getting closer to the left wall
+    leftSpeed += abs(PIDerrorSum);
+    rightSpeed -= abs(PIDerrorSum);
   } else {
-    rightSpeed = 255;
-    leftSpeed = 255;
+    rightSpeed = 150;
+    leftSpeed = 150;
   }
  
   if (rightSpeed < 0) {
@@ -185,13 +187,13 @@ void moveStraight() {
   prevTotalError = totalError;
   prevTime = nowT;
 
-  if(loopCounter == 100)
-  {
-    Serial.print("The sum of the errors up till loop 100 is: ");        // if the error is larger and larger, then 
-                                                                        // that means its straying off the center more and more
-    Serial.println(sumError);
-    earlyStop();
-  }
+//  if(loopCounter == 100)
+//  {
+//    Serial.print("The sum of the errors up till loop 100 is: ");        // if the error is larger and larger, then 
+//                                                                        // that means its straying off the center more and more
+//    Serial.println(sumError);
+//    earlyStop();
+//  }
   
 }
 
@@ -201,11 +203,8 @@ void earlyStop()
   digitalWrite(IN2, HIGH); 
   digitalWrite(IN3, HIGH);
   digitalWrite(IN4, HIGH);
-
-  while (true)
-  {
-     Serial.println(" ");
-  }
+  Serial.println(" ");
+  while (true) {}
 }
 
 void stopMoving() {
@@ -321,7 +320,7 @@ void turnRight() {
 
 int acquireSensor(int pin) {
   int sum = 0;
-  int numSamples = 953;
+  int numSamples = 23;
   for (int i = 0; i < numSamples; i++) {
     sum += analogRead(pin);
   }
