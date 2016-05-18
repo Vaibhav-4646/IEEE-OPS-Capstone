@@ -10,7 +10,7 @@
 
 double kp = .2;      // Proportional gain
 double ki = 0;        // Integral gain 
-double kd = 0;       // Derivative gain
+double kd = 0.05;       // Derivative gain
 
 int zeroPCB1 = 0;
 int zeroPCB2 = 0;
@@ -105,10 +105,10 @@ void loop() {
 
 bool wallsPresent() {
   //Serial.println("In wallsPresent");
-//  right = acquireSensor(PCB_R);
-//  left = acquireSensor(PCB_L);
+  right = acquireSensor(PCB_R);
+  left = acquireSensor(PCB_L);
   front = acquireSensor(PCB_F);
-  if (front > threshold_F*2 || front > 850)
+  if (front > threshold_F*1.5 || front > 850)
     return false;
 //  if (left < threshold_L/5)
 //    return false;
@@ -143,8 +143,8 @@ void moveStraight() {
   /* 
    *  computing working error values
    */
-  sumError += (totalError * timeChange/1000);
-  double derivError = (totalError - prevTotalError);///timeChange;
+  sumError += (totalError * timeChange);
+  double derivError = (totalError - prevTotalError);
   double PIDerrorSum = kp * totalError + ki * sumError + kd * derivError;
       
   if (totalError < -1 * tolerance) {          // TODO: we need to change this part to now use I and D.
@@ -154,8 +154,8 @@ void moveStraight() {
     leftSpeed += abs(PIDerrorSum);
     rightSpeed -= abs(PIDerrorSum);
   } else {
-    rightSpeed = 150;
-    leftSpeed = 150;
+    rightSpeed = 200;
+    leftSpeed = 200;
   }
  
   if (rightSpeed < 0) {
@@ -219,104 +219,63 @@ void turn() {
     //right = acquireSensor(PCB_R);
    // left = acquireSensor(PCB_L);    // these are global variables now
     Serial.println("In turn");
-    if (right < threshold_R-200) {
+    if (right < threshold_R/2) {
       turnRight();
-    } else if (left < threshold_L-300) {
+    } else if (left < threshold_L/2) {
       turnLeft();
     }
 }
 
-void turnLeft() {
-  Serial.println("In turnLeft");
-  digitalWrite(IN1, LOW); //Moves forward for some time
-  digitalWrite(IN2, HIGH); 
-  digitalWrite(IN3, LOW);
-  digitalWrite(IN4, HIGH);
-  analogWrite(PWM_R, 100);
-  analogWrite(PWM_L, 100);
-//  while (acquireSensor(PCB_F) < threshold_F*2)
-//  {  
-//      Serial.println(acquireSensor(PCB_F));
-//      Serial.println("moving straight");
-//  }
-  delay(800);
-  
-  digitalWrite(IN1, HIGH); //Brake
-  digitalWrite(IN2, HIGH); 
-  digitalWrite(IN3, HIGH);
-  digitalWrite(IN4, HIGH);
-
-  digitalWrite(IN1, HIGH);
-  digitalWrite(IN2, LOW); 
-  digitalWrite(IN3, LOW);
-  digitalWrite(IN4, HIGH);
-  analogWrite(PWM_R, 150);
-  analogWrite(PWM_L, 150);
-  delay(1400); //TODO: Find what value this should be
-  
-  digitalWrite(IN1, HIGH); //Brake
-  digitalWrite(IN2, HIGH); 
-  digitalWrite(IN3, HIGH);
-  digitalWrite(IN4, HIGH);  
-  delay(50);
-  
-  digitalWrite(IN1, LOW); //Moves forward for some time
-  digitalWrite(IN2, HIGH); 
-  digitalWrite(IN3, LOW);
-  digitalWrite(IN4, HIGH);
-  analogWrite(PWM_R, 100);
-  analogWrite(PWM_L, 100);
-  delay(300);
-}
-
 void turnRight() {
-  //Go forward a bit based on time
-  //Turn right based on time
-  //Go forward a bit based on time
-  Serial.println("In turnRight");
-  digitalWrite(IN1, LOW); //Moves forward for some time
-  digitalWrite(IN2, HIGH); 
-  digitalWrite(IN3, LOW);
-  digitalWrite(IN4, HIGH);
-  analogWrite(PWM_R, 150);
-  analogWrite(PWM_L, 150);
-//  while (acquireSensor(PCB_F) < threshold_F*2)
-//  {  
-//      Serial.println(acquireSensor(PCB_F));
-//      Serial.println("moving straight");
-//  }
-  delay(800);
-  
-  digitalWrite(IN1, HIGH); //Brake
-  digitalWrite(IN2, HIGH); 
-  digitalWrite(IN3, HIGH);
-  digitalWrite(IN4, HIGH);
-  delay(50);
-  
+  Serial.println("In turn Right");
+  int prevLeft = left;
   digitalWrite(IN1, LOW);
   digitalWrite(IN2, HIGH); 
   digitalWrite(IN3, HIGH);
   digitalWrite(IN4, LOW);
   analogWrite(PWM_R, 150);
   analogWrite(PWM_L, 150);
-  delay(1400); //TODO: Find what value this should be
-  
-  digitalWrite(IN1, HIGH); //Brake
-  digitalWrite(IN2, HIGH); 
-  digitalWrite(IN3, HIGH);
-  digitalWrite(IN4, HIGH);  
-  delay(50);
+  delay(60);
+  Serial.print("Left sensor is: ");
+  Serial.println(left);
+  while ((left = acquireSensor(PCB_L)) < prevLeft+50)
+  {
+    Serial.println(left);
+  }
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, LOW); 
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, LOW);
+  analogWrite(PWM_R, 0);
+  analogWrite(PWM_L, 0);
+  prevTime = millis();
+}
 
-  Serial.println("Done turning");
-  
-  digitalWrite(IN1, LOW); //Moves forward for some time
-  digitalWrite(IN2, HIGH); 
+void turnLeft() {
+  Serial.println("In turn left");
+  int prevRight = right;
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW); 
   digitalWrite(IN3, LOW);
   digitalWrite(IN4, HIGH);
-  analogWrite(PWM_R, 255);
-  analogWrite(PWM_L, 255);
-  delay(300);
+  analogWrite(PWM_R, 150);
+  analogWrite(PWM_L, 150);
+  delay(60);
+  Serial.print("Right sensor is: ");
+  Serial.println(right);
+  while ((right = acquireSensor(PCB_R)) < prevRight-50)
+  {
+    Serial.println(right);
+  }
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, LOW); 
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, LOW);
+  analogWrite(PWM_R, 0);
+  analogWrite(PWM_L, 0);
+  prevTime = millis();
 }
+
 
 int acquireSensor(int pin) {
   int sum = 0;
