@@ -119,12 +119,25 @@ bool wallsPresent() {
 
 void moveStraight() {
   //Serial.println("In moveStraight");
+
+  /*
+    we need a state machine. Essentially, when one sensor drops off, the error should be only calcuated based on the other sensor that is still active
+    so there are 3 states:
+      1) Both sensors alive
+      2) Right Sensor alive
+      3) Left sensor alive
+
+    calculate the error respectively
+    If we add the integrator, then we need to get rid of old PID values ... but we might need 3 sets of PID values (according to the lord and savior Kevin Balke)
+      - for now, just the state machine should work.
+  */
+  
   loopCounter++;
   Serial.print("Loop counter is: ");
   Serial.println(loopCounter);
   rightDistance = right;
   leftDistance = left;
-  int defSpeed = 100;
+  int defSpeed = 150;
   rightSpeed = defSpeed;
   leftSpeed = defSpeed;
   rightError = threshold_R - rightDistance;
@@ -154,8 +167,8 @@ void moveStraight() {
     leftSpeed += abs(PIDerrorSum);
     rightSpeed -= abs(PIDerrorSum);
   } else {
-    rightSpeed = 200;
-    leftSpeed = 200;
+    rightSpeed = 220;
+    leftSpeed = 220;
   }
  
   if (rightSpeed < 0) {
@@ -216,8 +229,6 @@ void stopMoving() {
 
 void turn() {
     //figures out which direction to turn, and then EXECUTES
-    //right = acquireSensor(PCB_R);
-   // left = acquireSensor(PCB_L);    // these are global variables now
     Serial.println("In turn");
     if (right < threshold_R/2) {
       turnRight();
@@ -279,7 +290,7 @@ void turnLeft() {
 
 int acquireSensor(int pin) {
   int sum = 0;
-  int numSamples = 23;
+  int numSamples = 19;
   for (int i = 0; i < numSamples; i++) {
     sum += analogRead(pin);
   }
