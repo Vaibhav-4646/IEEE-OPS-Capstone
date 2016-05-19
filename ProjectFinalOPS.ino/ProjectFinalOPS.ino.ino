@@ -108,30 +108,11 @@ bool wallsPresent() {
   right = acquireSensor(PCB_R);
   left = acquireSensor(PCB_L);
   front = acquireSensor(PCB_F);
-  if (front > threshold_F*1.5 || front > 850)
-    return false;
-//  if (left < threshold_L/5)
-//    return false;
-//  if (right < threshold_R/5)
-//    return false;
-  return true;
+  return front <= threshold_F*2.4 && front <= 700;
 }
 
 void moveStraight() {
-  //Serial.println("In moveStraight");
-
-  /*
-    we need a state machine. Essentially, when one sensor drops off, the error should be only calcuated based on the other sensor that is still active
-    so there are 3 states:
-      1) Both sensors alive
-      2) Right Sensor alive
-      3) Left sensor alive
-
-    calculate the error respectively
-    If we add the integrator, then we need to get rid of old PID values ... but we might need 3 sets of PID values (according to the lord and savior Kevin Balke)
-      - for now, just the state machine should work.
-  */
-  
+  //Serial.println("In moveStraight");  
   loopCounter++;
   Serial.print("Loop counter is: ");
   Serial.println(loopCounter);
@@ -146,13 +127,21 @@ void moveStraight() {
   leftError = threshold_L - leftDistance;
   Serial.print("Left Error is : ");
   Serial.println(leftError);
-  totalError = rightError - leftError;
+
+  if (right < threshold_R/2) {
+    totalError = -leftError;
+    Serial.println("No right wall");
+  }
+  else if (left < threshold_L/2) {
+    totalError = rightError;
+    Serial.println("No left wall");
+  }
+  else
+    totalError = rightError - leftError;
   
   /* how long since the last calculated */
   double nowT = millis();       // current time
   double timeChange = (double)(nowT - prevTime);
-  Serial.print("Time change is: ");
-  Serial.println(timeChange);
   /* 
    *  computing working error values
    */
@@ -160,7 +149,7 @@ void moveStraight() {
   double derivError = (totalError - prevTotalError);
   double PIDerrorSum = kp * totalError + ki * sumError + kd * derivError;
       
-  if (totalError < -1 * tolerance) {          // TODO: we need to change this part to now use I and D.
+  if (totalError < -tolerance) {          // TODO: we need to change this part to now use I and D.
     leftSpeed -= abs(PIDerrorSum); 
     rightSpeed += abs(PIDerrorSum);
   } else if (totalError > tolerance) {      // if total error is negative, left error > right, which means its getting closer to the left wall
@@ -249,7 +238,7 @@ void turnRight() {
   delay(60);
   Serial.print("Left sensor is: ");
   Serial.println(left);
-  while ((left = acquireSensor(PCB_L)) < prevLeft+50)
+  while ((left = acquireSensor(PCB_L)) < prevLeft-75)
   {
     Serial.println(left);
   }
@@ -274,7 +263,7 @@ void turnLeft() {
   delay(60);
   Serial.print("Right sensor is: ");
   Serial.println(right);
-  while ((right = acquireSensor(PCB_R)) < prevRight-50)
+  while ((right = acquireSensor(PCB_R)) < prevRight-75)
   {
     Serial.println(right);
   }
