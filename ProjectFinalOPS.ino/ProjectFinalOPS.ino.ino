@@ -108,7 +108,7 @@ bool wallsPresent() {
   right = acquireSensor(PCB_R);
   left = acquireSensor(PCB_L);
   front = acquireSensor(PCB_F);
-  return front <= threshold_F*2.4 && front <= 700;
+  return front <= threshold_F*2.4 && front <= 730;
 }
 
 void moveStraight() {
@@ -118,7 +118,7 @@ void moveStraight() {
   Serial.println(loopCounter);
   rightDistance = right;
   leftDistance = left;
-  int defSpeed = 200;
+  int defSpeed = 175;
   rightSpeed = defSpeed;
   leftSpeed = defSpeed;
   rightError = threshold_R - rightDistance;
@@ -233,15 +233,15 @@ void turnRight() {
   digitalWrite(IN2, HIGH); 
   digitalWrite(IN3, HIGH);
   digitalWrite(IN4, LOW);
-  analogWrite(PWM_R, 150);
-  analogWrite(PWM_L, 150);
+  analogWrite(PWM_R, 255);
+  analogWrite(PWM_L, 255);
   delay(60);
   Serial.print("Left sensor is: ");
   Serial.println(left);
   Serial.print("Beginning time: ");
   Serial.println(millis());
   int nowTime = millis();
-  while ((left = acquireSensor(PCB_L)) < prevLeft-80 && nowTime-millis() < 850) //Prevent an infinte loop using time
+  while ((left = acquireSensor(PCB_L)) < prevLeft-60 && nowTime-millis() < 2000) //Prevent an infinte loop using time
   {
     Serial.println(left);
   }
@@ -263,15 +263,15 @@ void turnLeft() {
   digitalWrite(IN2, LOW); 
   digitalWrite(IN3, LOW);
   digitalWrite(IN4, HIGH);
-  analogWrite(PWM_R, 150);
-  analogWrite(PWM_L, 150);
+  analogWrite(PWM_R, 255);
+  analogWrite(PWM_L, 255);
   delay(60);
   Serial.print("Right sensor is: ");
   Serial.println(right);
   Serial.print("Beginning time: ");
   Serial.println(millis());
   int nowTime = millis();
-  while ((right = acquireSensor(PCB_R)) < prevRight-80 && nowTime-millis() < 850) //Prevent an infinte loop using time
+  while ((right = acquireSensor(PCB_R)) < prevRight-60 && nowTime-millis() < 2000) //Prevent an infinte loop using time
   {
     Serial.println(right);
   }
