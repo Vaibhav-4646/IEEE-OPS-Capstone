@@ -118,7 +118,7 @@ void moveStraight() {
   Serial.println(loopCounter);
   rightDistance = right;
   leftDistance = left;
-  int defSpeed = 150;
+  int defSpeed = 200;
   rightSpeed = defSpeed;
   leftSpeed = defSpeed;
   rightError = threshold_R - rightDistance;
