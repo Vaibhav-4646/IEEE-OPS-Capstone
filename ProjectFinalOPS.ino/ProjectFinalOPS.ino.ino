@@ -238,10 +238,15 @@ void turnRight() {
   delay(60);
   Serial.print("Left sensor is: ");
   Serial.println(left);
-  while ((left = acquireSensor(PCB_L)) < prevLeft-75)
+  Serial.print("Beginning time: ");
+  Serial.println(millis());
+  int nowTime = millis();
+  while ((left = acquireSensor(PCB_L)) < prevLeft-80 && nowTime-millis() < 850) //Prevent an infinte loop using time
   {
     Serial.println(left);
   }
+  Serial.print("Ending time: ");
+  Serial.println(millis());
   digitalWrite(IN1, LOW);
   digitalWrite(IN2, LOW); 
   digitalWrite(IN3, LOW);
@@ -263,10 +268,15 @@ void turnLeft() {
   delay(60);
   Serial.print("Right sensor is: ");
   Serial.println(right);
-  while ((right = acquireSensor(PCB_R)) < prevRight-75)
+  Serial.print("Beginning time: ");
+  Serial.println(millis());
+  int nowTime = millis();
+  while ((right = acquireSensor(PCB_R)) < prevRight-80 && nowTime-millis() < 850) //Prevent an infinte loop using time
   {
     Serial.println(right);
   }
+  Serial.print("Ending time: ");
+  Serial.println(millis());
   digitalWrite(IN1, LOW);
   digitalWrite(IN2, LOW); 
   digitalWrite(IN3, LOW);
